@@ -1,26 +1,26 @@
 {
-  "name": "Retry a Flaky API",
+  "name": "Retry a flaky API request and post the result",
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
   "connections": {
-    "TriggerManual": {
+    "Run manually": {
       "main": [
         [
           {
-            "node": "GetUnreliableData",
+            "node": "Fetch from flaky API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GetUnreliableData": {
+    "Fetch from flaky API": {
       "main": [
         [
           {
-            "node": "SendResult",
+            "node": "Post result downstream",
             "type": "main",
             "index": 0
           }
@@ -30,8 +30,72 @@
   },
   "nodes": [
     {
+      "id": "doc",
+      "name": "Sticky Note doc",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -340
+      ],
+      "parameters": {
+        "content": "## Retry a flaky API request and post the result\n\n## Who's it for\n\nAnyone whose workflow fails a few times a week against an API that is fine the rest of the time.\n\n## How it works\n\nThe HTTP request node has **Retry On Fail** enabled with five attempts and a one second gap, configured in the node's own Settings tab. Intermittent 5xx responses and timeouts are absorbed there and never reach the rest of the workflow - no retry loop, no error branch, and no Wait node to build or maintain. The result is only sent downstream once the request finally succeeds. If all five attempts fail, the workflow errors normally, which is the correct outcome: at that point it is a real outage rather than a blip, and it should reach your error workflow.\n\n## How to set up\n\n1. Point **Fetch from flaky API** at your endpoint and attach a credential.\n2. Point **Post result downstream** at wherever the result should go.\n3. Open the Settings tab of the fetch node to adjust attempts and the wait between them.\n4. Replace the manual trigger with a Schedule or Webhook trigger for production use.\n\n## Requirements\n\nAny HTTP API. No paid service is needed.\n\n## How to customize\n\nRaise the wait between tries for a rate-limited API, where retrying after one second will simply be refused again - several seconds works better there. Pair this with an error workflow so the genuine failures are reported rather than silently ending the run.",
+        "height": 891,
+        "width": 660,
+        "color": 1
+      }
+    },
+    {
+      "id": "s0",
+      "name": "Sticky Note s0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -340
+      ],
+      "parameters": {
+        "content": "### 1. Manual trigger for testing\nSwap this for a Schedule or Webhook trigger once the retry behaviour is doing what you want.",
+        "height": 220,
+        "width": 280,
+        "color": 7
+      }
+    },
+    {
+      "id": "s1",
+      "name": "Sticky Note s1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        408,
+        -340
+      ],
+      "parameters": {
+        "content": "### 2. The retry lives on the node, not in code\n**Retry On Fail** is on, with 5 attempts and 1000 ms between them, set in the node's Settings tab. Most intermittent 5xx and timeout errors never reach you. No loop, no error branch, no wait node needed.",
+        "height": 225,
+        "width": 280,
+        "color": 7
+      }
+    },
+    {
+      "id": "s2",
+      "name": "Sticky Note s2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        856,
+        -340
+      ],
+      "parameters": {
+        "content": "### 3. Send the result on\nRuns only after the fetch finally succeeds. If all five attempts fail, the workflow errors out - which is what you want, because at that point it is a real outage and not a blip.",
+        "height": 220,
+        "width": 280,
+        "color": 7
+      }
+    },
+    {
       "id": "n1",
-      "name": "TriggerManual",
+      "name": "Run manually",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
@@ -42,11 +106,11 @@
     },
     {
       "id": "n2",
-      "name": "GetUnreliableData",
+      "name": "Fetch from flaky API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        224,
+        448,
         0
       ],
       "retryOnFail": true,
@@ -67,11 +131,11 @@
     },
     {
       "id": "n3",
-      "name": "SendResult",
+      "name": "Post result downstream",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        448,
+        896,
         0
       ],
       "credentials": {
@@ -90,12 +154,12 @@
         "bodyParameters": {
           "parameters": [
             {
-              "name": "order_id",
-              "value": "={{ $json.order.order_id }}"
+              "name": "fetched_at",
+              "value": "={{ $now }}"
             },
             {
-              "name": "retry_configured",
-              "value": "={{ true }}"
+              "name": "payload",
+              "value": "={{ JSON.stringify($json) }}"
             }
           ]
         },

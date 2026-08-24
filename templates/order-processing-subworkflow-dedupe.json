@@ -1,88 +1,88 @@
 {
-  "name": "Order Processing (Sub-workflow)",
+  "name": "Process orders idempotently with a data table and a sub-workflow",
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
   "connections": {
-    "TriggerFromParent": {
+    "Receive order from parent workflow": {
       "main": [
         [
           {
-            "node": "CheckOrderExists",
+            "node": "Look up order id",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "CheckOrderExists": {
+    "Look up order id": {
       "main": [
         [
           {
-            "node": "OrderExists",
+            "node": "Already processed?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OrderExists": {
+    "Already processed?": {
       "main": [
         [
           {
-            "node": "InsertOrder",
+            "node": "Record order as pending",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "SetSkipped",
+            "node": "Return skipped result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "InsertOrder": {
+    "Record order as pending": {
       "main": [
         [
           {
-            "node": "CallProcessingAPI",
+            "node": "Call processing API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "CallProcessingAPI": {
+    "Call processing API": {
       "main": [
         [
           {
-            "node": "UpdateOrderStatus",
+            "node": "Mark order completed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "UpdateOrderStatus": {
+    "Mark order completed": {
       "main": [
         [
           {
-            "node": "SetProcessingResult",
+            "node": "Return processed result",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "SetSkipped": {
+    "Return skipped result": {
       "main": [
         [
           {
-            "node": "SetProcessingResult",
+            "node": "Return processed result",
             "type": "main",
             "index": 0
           }
@@ -92,8 +92,88 @@
   },
   "nodes": [
     {
+      "id": "doc",
+      "name": "Sticky Note doc",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -740,
+        -340
+      ],
+      "parameters": {
+        "content": "## Process orders idempotently with a data table and a sub-workflow\n\n## Who's it for\n\nAnyone processing orders, payments, or any event that a provider may deliver more than once, where doing the work twice costs real money.\n\n## How it works\n\nA parent workflow calls this one through Execute Workflow. The order id is looked up in a data table that persists across executions. If the id is already there, the order has been handled before and the flow returns a skipped result without touching the API. If it is new, the order is recorded as pending **before** the processing call is made - that order matters, because a failure after the call but before the write would otherwise leave you with work done and no record of it. After the API returns, the row is marked completed and the caller is told which of the two things happened, processed or skipped, rather than a blanket success.\n\n## How to set up\n\n1. Create a data table with columns for the order id and a status field.\n2. Select it in the three data table nodes.\n3. Point **Call processing API** at your own endpoint and attach its credential.\n4. Call this workflow from your webhook workflow with an Execute Workflow node.\n5. Send the same order id twice and confirm the second run returns skipped.\n\n## Requirements\n\nn8n with data tables available, and an API to process against.\n\n## How to customize\n\nSwap the data table for Postgres and use `INSERT ... ON CONFLICT DO NOTHING RETURNING id` if you are already running a database - an empty return means someone else claimed the order first, which closes the race window entirely under heavy concurrency.",
+        "height": 937,
+        "width": 660,
+        "color": 1
+      }
+    },
+    {
+      "id": "s0",
+      "name": "Sticky Note s0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -340
+      ],
+      "parameters": {
+        "content": "### 1. Called, not triggered\nThis workflow is started by another one through Execute Workflow. Keeping the processing separate from the webhook that receives the order means the webhook can answer immediately while this part takes as long as it needs.",
+        "height": 225,
+        "width": 280,
+        "color": 7
+      }
+    },
+    {
+      "id": "s1",
+      "name": "Sticky Note s1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        408,
+        -340
+      ],
+      "parameters": {
+        "content": "### 2. Check before doing anything\nThe order id is looked up in a data table that persists across executions. If it is already there, the work has been done before and the flow stops - this is what makes a retried delivery safe.",
+        "height": 220,
+        "width": 708,
+        "color": 7
+      }
+    },
+    {
+      "id": "s2",
+      "name": "Sticky Note s2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1304,
+        -340
+      ],
+      "parameters": {
+        "content": "### 3. Claim first, then work\nThe order is recorded as pending **before** the API call, not after. If the call fails, the row still exists and the state is visible, instead of the order disappearing.",
+        "height": 220,
+        "width": 708,
+        "color": 7
+      }
+    },
+    {
+      "id": "s3",
+      "name": "Sticky Note s3",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        -340
+      ],
+      "parameters": {
+        "content": "### 4. Close the loop and report honestly\nThe row is marked completed and the caller is told which of the two things actually happened - processed or skipped - rather than a blanket success.",
+        "height": 220,
+        "width": 708,
+        "color": 7
+      }
+    },
+    {
       "id": "f1840213-772e-485b-8e02-71d61070519a",
-      "name": "TriggerFromParent",
+      "name": "Receive order from parent workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -122,11 +202,11 @@
     },
     {
       "id": "bda7aa52-8c60-42a9-ae31-6f9c96394b47",
-      "name": "CheckOrderExists",
+      "name": "Look up order id",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        224,
+        448,
         96
       ],
       "parameters": {
@@ -153,11 +233,11 @@
     },
     {
       "id": "144c23da-50dd-4d92-a2b6-34666fba1458",
-      "name": "OrderExists",
+      "name": "Already processed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        448,
+        896,
         96
       ],
       "parameters": {
@@ -185,11 +265,11 @@
     },
     {
       "id": "9fcd0d02-2474-4958-838d-8ae24c563754",
-      "name": "InsertOrder",
+      "name": "Record order as pending",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        672,
+        1344,
         0
       ],
       "parameters": {
@@ -203,9 +283,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "order_id": "={{ $('TriggerFromParent').item.json.order_id }}",
-            "customer_id": "={{ $('TriggerFromParent').item.json.customer_id }}",
-            "total": "={{ $('TriggerFromParent').item.json.total }}",
+            "order_id": "={{ $('Receive order from parent workflow').item.json.order_id }}",
+            "customer_id": "={{ $('Receive order from parent workflow').item.json.customer_id }}",
+            "total": "={{ $('Receive order from parent workflow').item.json.total }}",
             "status": "received",
             "received_at": "={{ $now }}"
           },
@@ -272,25 +352,16 @@
     },
     {
       "id": "0f45d02c-4334-4e83-864b-94f36c2f7e1b",
-      "name": "CallProcessingAPI",
+      "name": "Call processing API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        896,
+        1792,
         0
       ],
       "parameters": {
         "method": "POST",
         "url": "https://api.your-service.example/orders/process",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Assessment-ID",
-              "value": "YOUR_X_ASSESSMENT_ID"
-            }
-          ]
-        },
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "keypair",
@@ -298,15 +369,15 @@
           "parameters": [
             {
               "name": "order_id",
-              "value": "={{ $('TriggerFromParent').item.json.order_id }}"
+              "value": "={{ $('Receive order from parent workflow').item.json.order_id }}"
             },
             {
               "name": "customer_id",
-              "value": "={{ $('TriggerFromParent').item.json.customer_id }}"
+              "value": "={{ $('Receive order from parent workflow').item.json.customer_id }}"
             },
             {
               "name": "total",
-              "value": "={{ $('TriggerFromParent').item.json.total }}"
+              "value": "={{ $('Receive order from parent workflow').item.json.total }}"
             }
           ]
         },
@@ -322,11 +393,11 @@
     },
     {
       "id": "0d52ee12-f3bc-4586-9526-248060a34ce8",
-      "name": "UpdateOrderStatus",
+      "name": "Mark order completed",
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1120,
+        2240,
         0
       ],
       "parameters": {
@@ -343,7 +414,7 @@
             {
               "keyName": "order_id",
               "condition": "eq",
-              "keyValue": "={{ $('TriggerFromParent').item.json.order_id }}"
+              "keyValue": "={{ $('Receive order from parent workflow').item.json.order_id }}"
             }
           ]
         },
@@ -416,11 +487,11 @@
     },
     {
       "id": "a62c1964-49e9-4274-9a30-6c9c582fde9c",
-      "name": "SetProcessingResult",
+      "name": "Return processed result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1344,
+        2688,
         96
       ],
       "parameters": {
@@ -431,7 +502,7 @@
             {
               "id": "b1",
               "name": "order_id",
-              "value": "={{ $('TriggerFromParent').item.json.order_id }}",
+              "value": "={{ $('Receive order from parent workflow').item.json.order_id }}",
               "type": "string"
             },
             {
@@ -465,11 +536,11 @@
     },
     {
       "id": "60467761-daae-43dc-9184-92bfc6904e02",
-      "name": "SetSkipped",
+      "name": "Return skipped result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1120,
+        2240,
         192
       ],
       "parameters": {

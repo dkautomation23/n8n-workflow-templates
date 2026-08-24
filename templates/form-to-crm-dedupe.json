@@ -1,6 +1,70 @@
 {
-  "name": "Contact form to CRM with dedupe",
+  "name": "Create CRM contacts from a form webhook and skip duplicates",
   "nodes": [
+    {
+      "id": "doc",
+      "name": "Sticky Note doc",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -780,
+        -40
+      ],
+      "parameters": {
+        "content": "## Create CRM contacts from a form webhook and skip duplicates\n\n## Who's it for\n\nAnyone collecting leads through a web form who ends up with the same person in their CRM three times.\n\n## How it works\n\nThe form posts to a webhook. A Set node normalizes the incoming fields - trimming whitespace and lower-casing the email - before anything else happens. That order matters: deduplicating raw input is the most common reason duplicates still slip through, because `Ann@Example.com ` and `ann@example.com` are different strings but the same person. The normalized value is then checked by Remove Duplicates, which keeps state across executions. Only genuinely new values reach the CRM. The form is answered on both paths, so a repeat submission returns a normal response instead of timing out.\n\n## How to set up\n\n1. Copy the webhook production URL into your form's action or webhook setting.\n2. Adjust the Set node to the field names your form actually sends.\n3. Point **Create CRM contact** at your CRM's API and attach its credential.\n4. Submit the form twice with the same email to confirm only one contact is created.\n\n## Requirements\n\nAn n8n instance reachable from the internet and a CRM with an HTTP API. No paid service is needed.\n\n## How to customize\n\nDeduplicate on a different field, or on a combination, by changing the value Remove Duplicates compares. Add a Slack or email notification after the CRM call if you want to be told about new leads.",
+        "height": 891,
+        "width": 660,
+        "color": 1
+      }
+    },
+    {
+      "id": "s0",
+      "name": "Sticky Note s0",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -40
+      ],
+      "parameters": {
+        "content": "### 1. Receive the submission\nPoint your form's webhook or POST action at the production URL of this node.",
+        "height": 220,
+        "width": 280,
+        "color": 7
+      }
+    },
+    {
+      "id": "s1",
+      "name": "Sticky Note s1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        360,
+        -40
+      ],
+      "parameters": {
+        "content": "### 2. Normalize, then deduplicate\nFields are trimmed and lower-cased first, so `Ann@Example.com ` and `ann@example.com` are treated as the same person. Only then does **Remove Duplicates** compare against previously seen values - deduplicating raw input is the usual reason duplicates still get through.",
+        "height": 220,
+        "width": 700,
+        "color": 7
+      }
+    },
+    {
+      "id": "s2",
+      "name": "Sticky Note s2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        -40
+      ],
+      "parameters": {
+        "content": "### 3. Create once, always answer\nA new contact is created only for a value not seen before. The form receives a response either way, so a repeat submission looks successful to the user instead of hanging.",
+        "height": 220,
+        "width": 700,
+        "color": 7
+      }
+    },
     {
       "parameters": {
         "httpMethod": "POST",
@@ -42,7 +106,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        180,
+        400,
         300
       ]
     },
@@ -57,7 +121,7 @@
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
-        400,
+        840,
         300
       ]
     },
@@ -75,7 +139,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        620,
+        1280,
         300
       ]
     },
@@ -90,7 +154,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        840,
+        1720,
         300
       ]
     }
@@ -144,9 +208,5 @@
   "active": false,
   "settings": {
     "executionOrder": "v1"
-  },
-  "pinData": {},
-  "meta": {
-    "templateCredsSetupCompleted": false
   }
 }
