@@ -1,0 +1,106 @@
+{
+  "name": "Retry a Flaky API",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "TriggerManual": {
+      "main": [
+        [
+          {
+            "node": "GetUnreliableData",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetUnreliableData": {
+      "main": [
+        [
+          {
+            "node": "SendResult",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "TriggerManual",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "n2",
+      "name": "GetUnreliableData",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 1000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Your Header Auth credential"
+        }
+      },
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.your-service.example/flaky-endpoint",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      }
+    },
+    {
+      "id": "n3",
+      "name": "SendResult",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Your Header Auth credential"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.your-service.example/results",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "order_id",
+              "value": "={{ $json.order.order_id }}"
+            },
+            {
+              "name": "retry_configured",
+              "value": "={{ true }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ]
+}

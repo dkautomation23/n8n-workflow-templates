@@ -1,0 +1,82 @@
+{
+  "name": "Error Workflow - Report Failures",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "TriggerError": {
+      "main": [
+        [
+          {
+            "node": "ReportError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "e1",
+      "name": "TriggerError",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e2",
+      "name": "ReportError",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "Your Header Auth credential"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.your-service.example/error-report",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "workflow_name",
+              "value": "={{ $json.workflow.name }}"
+            },
+            {
+              "name": "workflow_id",
+              "value": "={{ $json.workflow.id }}"
+            },
+            {
+              "name": "execution_url",
+              "value": "={{ $json.execution.url }}"
+            },
+            {
+              "name": "error_message",
+              "value": "={{ $json.execution.error.message }}"
+            },
+            {
+              "name": "failed_node",
+              "value": "={{ $json.execution.lastNodeExecuted }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ]
+}
