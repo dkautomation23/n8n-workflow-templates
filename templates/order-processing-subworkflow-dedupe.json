@@ -1,181 +1,89 @@
 {
   "name": "Process orders idempotently with a data table and a sub-workflow",
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "connections": {
-    "Receive order from parent workflow": {
-      "main": [
-        [
-          {
-            "node": "Look up order id",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Look up order id": {
-      "main": [
-        [
-          {
-            "node": "Already processed?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Already processed?": {
-      "main": [
-        [
-          {
-            "node": "Record order as pending",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Return skipped result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Record order as pending": {
-      "main": [
-        [
-          {
-            "node": "Call processing API",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Call processing API": {
-      "main": [
-        [
-          {
-            "node": "Mark order completed",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Mark order completed": {
-      "main": [
-        [
-          {
-            "node": "Return processed result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Return skipped result": {
-      "main": [
-        [
-          {
-            "node": "Return processed result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    }
-  },
   "nodes": [
     {
-      "id": "doc",
-      "name": "Sticky Note doc",
+      "parameters": {
+        "content": "## Process orders idempotently with a data table and a sub-workflow\n\n### How it works\n\nThis sub-workflow receives an order from a parent workflow and uses a data table to determine whether the order ID has already been processed. If the order is new, it records a pending state, calls an external processing API, marks the order as completed, and returns the processed result. If the order was already handled, it skips processing and returns a skipped-style result through the shared final output path.\n\n### Setup steps\n\n- Configure the parent workflow to call this sub-workflow with the expected order fields, especially a unique order_id.\n- Create or select the n8n data table used to store order IDs and processing status, with columns for pending/completed state and timestamps as needed.\n- Configure the HTTP Request node with the correct processing API URL, authentication credentials, headers, and request body mapping.\n- Verify the Set nodes return the fields expected by the parent workflow.\n\n### Customization\n\nYou can adapt the idempotency key, stored status values, API endpoint, and returned fields to match your order system.",
+        "width": 480,
+        "height": 784
+      },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -740,
-        -340
+        -608,
+        -160
       ],
-      "parameters": {
-        "content": "## Process orders idempotently with a data table and a sub-workflow\n\n## Who's it for\n\nAnyone processing orders, payments, or any event that a provider may deliver more than once, where doing the work twice costs real money.\n\n## How it works\n\nA parent workflow calls this one through Execute Workflow. The order id is looked up in a data table that persists across executions. If the id is already there, the order has been handled before and the flow returns a skipped result without touching the API. If it is new, the order is recorded as pending **before** the processing call is made - that order matters, because a failure after the call but before the write would otherwise leave you with work done and no record of it. After the API returns, the row is marked completed and the caller is told which of the two things happened, processed or skipped, rather than a blanket success.\n\n## How to set up\n\n1. Create a data table with columns for the order id and a status field.\n2. Select it in the three data table nodes.\n3. Point **Call processing API** at your own endpoint and attach its credential.\n4. Call this workflow from your webhook workflow with an Execute Workflow node.\n5. Send the same order id twice and confirm the second run returns skipped.\n\n## Requirements\n\nn8n with data tables available, and an API to process against.\n\n## How to customize\n\nSwap the data table for Postgres and use `INSERT ... ON CONFLICT DO NOTHING RETURNING id` if you are already running a database - an empty return means someone else claimed the order first, which closes the race window entirely under heavy concurrency.",
-        "height": 937,
-        "width": 660,
-        "color": 1
-      }
+      "id": "5e49efd8-1b5c-4f71-9129-35eb7285941e",
+      "name": "Sticky Note"
     },
     {
-      "id": "s0",
-      "name": "Sticky Note s0",
+      "parameters": {
+        "content": "## Receive and lookup order\n\nAccepts the order from the parent workflow and checks the data table for an existing record with the same order ID.",
+        "width": 640,
+        "height": 304,
+        "color": 7
+      },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -40,
-        -340
+        -48,
+        -32
       ],
-      "parameters": {
-        "content": "### 1. Called, not triggered\nThis workflow is started by another one through Execute Workflow. Keeping the processing separate from the webhook that receives the order means the webhook can answer immediately while this part takes as long as it needs.",
-        "height": 225,
-        "width": 280,
-        "color": 7
-      }
+      "id": "886279c5-cf30-44b5-9a2f-531aaa03c369",
+      "name": "Sticky Note1"
     },
     {
-      "id": "s1",
-      "name": "Sticky Note s1",
+      "parameters": {
+        "content": "## Check processing status\n\nBranches the workflow based on whether the lookup indicates the order was already processed.",
+        "width": 240,
+        "height": 336,
+        "color": 7
+      },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        408,
-        -340
+        848,
+        -80
       ],
-      "parameters": {
-        "content": "### 2. Check before doing anything\nThe order id is looked up in a data table that persists across executions. If it is already there, the work has been done before and the flow stops - this is what makes a retried delivery safe.",
-        "height": 220,
-        "width": 708,
-        "color": 7
-      }
+      "id": "05127f58-4fa3-4dd2-bf6e-c6af7779e560",
+      "name": "Sticky Note2"
     },
     {
-      "id": "s2",
-      "name": "Sticky Note s2",
+      "parameters": {
+        "content": "## Reserve and process order\n\nFor new orders, records the order as pending and sends it to the external processing API.",
+        "width": 640,
+        "height": 304,
+        "color": 7
+      },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1304,
-        -340
+        1296,
+        -128
       ],
-      "parameters": {
-        "content": "### 3. Claim first, then work\nThe order is recorded as pending **before** the API call, not after. If the call fails, the row still exists and the state is visible, instead of the order disappearing.",
-        "height": 220,
-        "width": 708,
-        "color": 7
-      }
+      "id": "0b83ba4b-e54b-45fc-a866-63e7b61d5a4c",
+      "name": "Sticky Note3"
     },
     {
-      "id": "s3",
-      "name": "Sticky Note s3",
+      "parameters": {
+        "content": "## Finalize return result\n\nMarks successfully processed orders as completed, prepares skipped results for duplicate orders, and funnels both paths into the final response returned to the parent workflow.",
+        "width": 640,
+        "height": 512,
+        "color": 7
+      },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2200,
-        -340
+        2192,
+        -160
       ],
-      "parameters": {
-        "content": "### 4. Close the loop and report honestly\nThe row is marked completed and the caller is told which of the two things actually happened - processed or skipped - rather than a blanket success.",
-        "height": 220,
-        "width": 708,
-        "color": 7
-      }
+      "id": "fb82109e-368f-47e9-af0b-8bb23e6c66cc",
+      "name": "Sticky Note4"
     },
     {
       "id": "f1840213-772e-485b-8e02-71d61070519a",
-      "name": "Receive order from parent workflow",
+      "name": "When Order Received",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.2,
       "position": [
         0,
         96
@@ -198,415 +106,506 @@
             }
           ]
         }
-      }
+      },
+      "typeVersion": 1.2
     },
     {
       "id": "bda7aa52-8c60-42a9-ae31-6f9c96394b47",
-      "name": "Look up order id",
+      "name": "Check Order ID in Table",
       "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
       "position": [
         448,
         96
       ],
       "parameters": {
-        "resource": "row",
-        "operation": "get",
-        "dataTableId": {
-          "__rl": true,
-          "mode": "name",
-          "value": "orders"
-        },
-        "matchType": "allConditions",
         "filters": {
           "conditions": [
             {
               "keyName": "order_id",
-              "condition": "eq",
-              "keyValue": "={{ $json.order_id }}"
+              "keyValue": "={{ $json.order_id }}",
+              "condition": "eq"
             }
           ]
         },
-        "returnAll": true
+        "resource": "row",
+        "matchType": "allConditions",
+        "operation": "get",
+        "returnAll": true,
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "orders"
+        }
       },
+      "typeVersion": 1.1,
       "alwaysOutputData": true
     },
     {
       "id": "144c23da-50dd-4d92-a2b6-34666fba1458",
-      "name": "Already processed?",
+      "name": "If Order Not Processed",
       "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
       "position": [
         896,
         96
       ],
       "parameters": {
+        "options": {},
         "conditions": {
           "options": {
-            "caseSensitive": true,
             "leftValue": "",
+            "caseSensitive": true,
             "typeValidation": "loose"
           },
+          "combinator": "and",
           "conditions": [
             {
-              "leftValue": "={{ $json.order_id }}",
               "operator": {
                 "type": "string",
                 "operation": "empty",
                 "singleValue": true
-              }
+              },
+              "leftValue": "={{ $json.order_id }}"
             }
-          ],
-          "combinator": "and"
+          ]
         },
-        "looseTypeValidation": true,
-        "options": {}
-      }
+        "looseTypeValidation": true
+      },
+      "typeVersion": 2.2
     },
     {
       "id": "9fcd0d02-2474-4958-838d-8ae24c563754",
-      "name": "Record order as pending",
+      "name": "Mark Order as Pending",
       "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
       "position": [
         1344,
         0
       ],
       "parameters": {
+        "columns": {
+          "value": {
+            "total": "={{ $('When Order Received').item.json.total }}",
+            "status": "received",
+            "order_id": "={{ $('When Order Received').item.json.order_id }}",
+            "customer_id": "={{ $('When Order Received').item.json.customer_id }}",
+            "received_at": "={{ $now }}"
+          },
+          "schema": [
+            {
+              "id": "order_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "customer_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "total",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "received_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "received_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "processed_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "processed_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": []
+        },
+        "options": {},
         "resource": "row",
         "operation": "insert",
         "dataTableId": {
           "__rl": true,
           "mode": "name",
           "value": "orders"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "order_id": "={{ $('Receive order from parent workflow').item.json.order_id }}",
-            "customer_id": "={{ $('Receive order from parent workflow').item.json.customer_id }}",
-            "total": "={{ $('Receive order from parent workflow').item.json.total }}",
-            "status": "received",
-            "received_at": "={{ $now }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "order_id",
-              "displayName": "order_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "customer_id",
-              "displayName": "customer_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "total",
-              "displayName": "total",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "status",
-              "displayName": "status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "received_at",
-              "displayName": "received_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "processed_at",
-              "displayName": "processed_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ]
-        },
-        "options": {}
-      }
+        }
+      },
+      "typeVersion": 1.1
     },
     {
       "id": "0f45d02c-4334-4e83-864b-94f36c2f7e1b",
-      "name": "Call processing API",
+      "name": "Post to Order Processing API",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
       "position": [
         1792,
         0
       ],
       "parameters": {
-        "method": "POST",
         "url": "https://api.your-service.example/orders/process",
+        "method": "POST",
+        "options": {},
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "keypair",
+        "authentication": "genericCredentialType",
         "bodyParameters": {
           "parameters": [
             {
               "name": "order_id",
-              "value": "={{ $('Receive order from parent workflow').item.json.order_id }}"
+              "value": "={{ $('When Order Received').item.json.order_id }}"
             },
             {
               "name": "customer_id",
-              "value": "={{ $('Receive order from parent workflow').item.json.customer_id }}"
+              "value": "={{ $('When Order Received').item.json.customer_id }}"
             },
             {
               "name": "total",
-              "value": "={{ $('Receive order from parent workflow').item.json.total }}"
+              "value": "={{ $('When Order Received').item.json.total }}"
             }
           ]
         },
-        "options": {},
-        "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth"
       },
       "credentials": {
         "httpHeaderAuth": {
           "name": "Your Header Auth credential"
         }
-      }
+      },
+      "typeVersion": 4.2
     },
     {
       "id": "0d52ee12-f3bc-4586-9526-248060a34ce8",
-      "name": "Mark order completed",
+      "name": "Update Order Status to Complete",
       "type": "n8n-nodes-base.dataTable",
-      "typeVersion": 1.1,
       "position": [
         2240,
         0
       ],
       "parameters": {
+        "columns": {
+          "value": {
+            "status": "={{ $json.result }}",
+            "processed_at": "={{ $json.processed_at }}"
+          },
+          "schema": [
+            {
+              "id": "order_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "order_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_id",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "customer_id",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total",
+              "type": "number",
+              "display": true,
+              "required": false,
+              "displayName": "total",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "type": "string",
+              "display": true,
+              "required": false,
+              "displayName": "status",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "received_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "received_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "processed_at",
+              "type": "dateTime",
+              "display": true,
+              "required": false,
+              "displayName": "processed_at",
+              "defaultMatch": false,
+              "canBeUsedToMatch": true
+            }
+          ],
+          "mappingMode": "defineBelow",
+          "matchingColumns": []
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "order_id",
+              "keyValue": "={{ $('When Order Received').item.json.order_id }}",
+              "condition": "eq"
+            }
+          ]
+        },
+        "options": {},
         "resource": "row",
+        "matchType": "allConditions",
         "operation": "update",
         "dataTableId": {
           "__rl": true,
           "mode": "name",
           "value": "orders"
-        },
-        "matchType": "allConditions",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "order_id",
-              "condition": "eq",
-              "keyValue": "={{ $('Receive order from parent workflow').item.json.order_id }}"
-            }
-          ]
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "status": "={{ $json.result }}",
-            "processed_at": "={{ $json.processed_at }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "order_id",
-              "displayName": "order_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "customer_id",
-              "displayName": "customer_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "total",
-              "displayName": "total",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "status",
-              "displayName": "status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "received_at",
-              "displayName": "received_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "processed_at",
-              "displayName": "processed_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true
-            }
-          ]
-        },
-        "options": {}
-      }
+        }
+      },
+      "typeVersion": 1.1
     },
     {
       "id": "a62c1964-49e9-4274-9a30-6c9c582fde9c",
-      "name": "Return processed result",
+      "name": "Set Processed Order Result",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
       "position": [
         2688,
         96
       ],
       "parameters": {
         "mode": "manual",
-        "includeOtherFields": false,
+        "options": {},
         "assignments": {
           "assignments": [
             {
               "id": "b1",
               "name": "order_id",
-              "value": "={{ $('Receive order from parent workflow').item.json.order_id }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $('When Order Received').item.json.order_id }}"
             },
             {
               "id": "b2",
               "name": "processing_result",
-              "value": "={{ $json.status }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.status }}"
             },
             {
               "id": "b3",
               "name": "processed_at",
-              "value": "={{ $json.processed_at }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.processed_at }}"
             },
             {
               "id": "b4",
               "name": "stored",
-              "value": "={{ $json.id ? true : false }}",
-              "type": "boolean"
+              "type": "boolean",
+              "value": "={{ $json.id ? true : false }}"
             },
             {
               "id": "b5",
               "name": "stored_order",
-              "value": "={{ $json.toJsonString() }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.toJsonString() }}"
             }
           ]
         },
-        "options": {}
-      }
+        "includeOtherFields": false
+      },
+      "typeVersion": 3.4
     },
     {
       "id": "60467761-daae-43dc-9184-92bfc6904e02",
-      "name": "Return skipped result",
+      "name": "Set Skipped Order Result",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
       "position": [
         2240,
         192
       ],
       "parameters": {
         "mode": "manual",
-        "includeOtherFields": false,
+        "options": {},
         "assignments": {
           "assignments": [
             {
               "id": "a1",
               "name": "order_id",
-              "value": "={{ $json.order_id }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.order_id }}"
             },
             {
               "id": "a2",
               "name": "customer_id",
-              "value": "={{ $json.customer_id }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.customer_id }}"
             },
             {
               "id": "a3",
               "name": "total",
-              "value": "={{ $json.total }}",
-              "type": "number"
+              "type": "number",
+              "value": "={{ $json.total }}"
             },
             {
               "id": "a4",
               "name": "status",
-              "value": "skipped",
-              "type": "string"
+              "type": "string",
+              "value": "skipped"
             },
             {
               "id": "a5",
               "name": "received_at",
-              "value": "={{ $json.received_at }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.received_at }}"
             },
             {
               "id": "a6",
               "name": "processed_at",
-              "value": "={{ $json.processed_at }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.processed_at }}"
             },
             {
               "id": "a7",
               "name": "id",
-              "value": "={{ $json.id }}",
-              "type": "number"
+              "type": "number",
+              "value": "={{ $json.id }}"
             },
             {
               "id": "a8",
               "name": "createdAt",
-              "value": "={{ $json.createdAt }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.createdAt }}"
             },
             {
               "id": "a9",
               "name": "updatedAt",
-              "value": "={{ $json.updatedAt }}",
-              "type": "string"
+              "type": "string",
+              "value": "={{ $json.updatedAt }}"
             }
           ]
         },
-        "options": {}
-      }
+        "includeOtherFields": false
+      },
+      "typeVersion": 3.4
     }
   ],
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "connections": {
+    "Check Order ID in Table": {
+      "main": [
+        [
+          {
+            "node": "If Order Not Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Order Not Processed": {
+      "main": [
+        [
+          {
+            "node": "Mark Order as Pending",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Skipped Order Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Order Processing API": {
+      "main": [
+        [
+          {
+            "node": "Update Order Status to Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Order Status to Complete": {
+      "main": [
+        [
+          {
+            "node": "Set Processed Order Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Skipped Order Result": {
+      "main": [
+        [
+          {
+            "node": "Set Processed Order Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Order as Pending": {
+      "main": [
+        [
+          {
+            "node": "Post to Order Processing API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Order Received": {
+      "main": [
+        [
+          {
+            "node": "Check Order ID in Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "description": "Callable sub-workflow: check the data table for an existing record, insert only new ones, call the processing API, write the result back."
 }

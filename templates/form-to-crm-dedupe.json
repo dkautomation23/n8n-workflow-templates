@@ -2,66 +2,65 @@
   "name": "Create CRM contacts from a form webhook and skip duplicates",
   "nodes": [
     {
-      "id": "doc",
-      "name": "Sticky Note doc",
+      "id": "main",
+      "name": "Sticky Note main",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -780,
-        -40
+        -656,
+        80
       ],
       "parameters": {
-        "content": "## Create CRM contacts from a form webhook and skip duplicates\n\n## Who's it for\n\nAnyone collecting leads through a web form who ends up with the same person in their CRM three times.\n\n## How it works\n\nThe form posts to a webhook. A Set node normalizes the incoming fields - trimming whitespace and lower-casing the email - before anything else happens. That order matters: deduplicating raw input is the most common reason duplicates still slip through, because `Ann@Example.com ` and `ann@example.com` are different strings but the same person. The normalized value is then checked by Remove Duplicates, which keeps state across executions. Only genuinely new values reach the CRM. The form is answered on both paths, so a repeat submission returns a normal response instead of timing out.\n\n## How to set up\n\n1. Copy the webhook production URL into your form's action or webhook setting.\n2. Adjust the Set node to the field names your form actually sends.\n3. Point **Create CRM contact** at your CRM's API and attach its credential.\n4. Submit the form twice with the same email to confirm only one contact is created.\n\n## Requirements\n\nAn n8n instance reachable from the internet and a CRM with an HTTP API. No paid service is needed.\n\n## How to customize\n\nDeduplicate on a different field, or on a combination, by changing the value Remove Duplicates compares. Add a Slack or email notification after the CRM call if you want to be told about new leads.",
-        "height": 891,
-        "width": 660,
-        "color": 1
+        "content": "## Create CRM contacts from a form webhook and skip duplicates\n\n### How it works\n\n1. Receives the form submission on a webhook.\n2. Normalizes the incoming fields first, trimming whitespace and lower-casing the email.\n3. Compares the normalized value against everything seen before with Remove Duplicates, which keeps state across executions.\n4. Creates a CRM contact only for a value that is genuinely new.\n5. Answers the form on both paths, so a repeat submission returns normally instead of hanging.\n\n### Setup steps\n\n- [ ] Copy the webhook production URL into your form's action or webhook setting.\n- [ ] Adjust the Set node to the field names your form actually sends.\n- [ ] Point the CRM node at your CRM's API and attach its credential.\n- [ ] Submit the form twice with the same email and confirm only one contact is created.\n\n### Customization\n\nDeduplicate on a different field, or on a combination of fields, by changing the value Remove Duplicates compares. Add a Slack or email node after the CRM call to be told about new leads.",
+        "height": 848,
+        "width": 480
       }
     },
     {
-      "id": "s0",
-      "name": "Sticky Note s0",
+      "id": "g0",
+      "name": "Sticky Note g0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -80,
-        -40
+        -96,
+        160
       ],
       "parameters": {
-        "content": "### 1. Receive the submission\nPoint your form's webhook or POST action at the production URL of this node.",
-        "height": 220,
-        "width": 280,
+        "content": "## Receive and normalize submission\n\nNormalizing before deduplicating is the point: raw input makes Ann@Example.com and ann@example.com look like two different people.",
+        "height": 288,
+        "width": 640,
         "color": 7
       }
     },
     {
-      "id": "s1",
-      "name": "Sticky Note s1",
+      "id": "g1",
+      "name": "Sticky Note g1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        360,
-        -40
+        800,
+        80
       ],
       "parameters": {
-        "content": "### 2. Normalize, then deduplicate\nFields are trimmed and lower-cased first, so `Ann@Example.com ` and `ann@example.com` are treated as the same person. Only then does **Remove Duplicates** compare against previously seen values - deduplicating raw input is the usual reason duplicates still get through.",
-        "height": 220,
-        "width": 700,
+        "content": "## Skip anything seen before\n\nRemove Duplicates keeps state across executions, so a repeat submission is recognised days later.",
+        "height": 384,
+        "width": 240,
         "color": 7
       }
     },
     {
-      "id": "s2",
-      "name": "Sticky Note s2",
+      "id": "g2",
+      "name": "Sticky Note g2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1240,
-        -40
+        1232,
+        160
       ],
       "parameters": {
-        "content": "### 3. Create once, always answer\nA new contact is created only for a value not seen before. The form receives a response either way, so a repeat submission looks successful to the user instead of hanging.",
-        "height": 220,
-        "width": 700,
+        "content": "## Create contact and respond\n\nOnly genuinely new values reach the CRM, and the form gets an answer either way.",
+        "height": 288,
+        "width": 640,
         "color": 7
       }
     },
@@ -73,7 +72,7 @@
         "options": {}
       },
       "id": "1f121978-e9dc-4df4-bacf-448a68fd00f6",
-      "name": "Form Webhook",
+      "name": "When Form Submitted",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -102,7 +101,7 @@
         "options": {}
       },
       "id": "67ad2084-8167-4b89-b95d-a177ac4ff02e",
-      "name": "Normalize",
+      "name": "Build Normalized Contact",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -117,7 +116,7 @@
         "options": {}
       },
       "id": "d9667def-bfa0-410d-8db3-0d30d5a5e5fb",
-      "name": "Seen before?",
+      "name": "Deduplicate by Email",
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
@@ -135,7 +134,7 @@
         "options": {}
       },
       "id": "10eb8bac-65e6-48c0-9c15-1ebf57ac8b5d",
-      "name": "Create CRM contact",
+      "name": "Create Contact in CRM",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -150,7 +149,7 @@
         "options": {}
       },
       "id": "00fd6387-ee52-46f3-9d53-ad09273df76c",
-      "name": "Respond OK",
+      "name": "Respond With Success",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
@@ -160,44 +159,44 @@
     }
   ],
   "connections": {
-    "Form Webhook": {
+    "When Form Submitted": {
       "main": [
         [
           {
-            "node": "Normalize",
+            "node": "Build Normalized Contact",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Normalize": {
+    "Build Normalized Contact": {
       "main": [
         [
           {
-            "node": "Seen before?",
+            "node": "Deduplicate by Email",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Seen before?": {
+    "Deduplicate by Email": {
       "main": [
         [
           {
-            "node": "Create CRM contact",
+            "node": "Create Contact in CRM",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create CRM contact": {
+    "Create Contact in CRM": {
       "main": [
         [
           {
-            "node": "Respond OK",
+            "node": "Respond With Success",
             "type": "main",
             "index": 0
           }

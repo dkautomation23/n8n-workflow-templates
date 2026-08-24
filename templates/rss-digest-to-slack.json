@@ -2,82 +2,81 @@
   "name": "Send a daily digest of RSS items to a Slack channel",
   "nodes": [
     {
-      "id": "doc",
-      "name": "Sticky Note doc",
+      "id": "main",
+      "name": "Sticky Note main",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -780,
-        -40
+        -656,
+        96
       ],
       "parameters": {
-        "content": "## Send a daily digest of RSS items to a Slack channel\n\n## Who's it for\n\nAnyone following several blogs, changelogs, or news feeds who wants one message a day instead of a browser full of tabs.\n\n## How it works\n\nA schedule trigger runs once each morning and the RSS node reads the feed. A filter keeps only items published in the last 24 hours - this step is what makes it a digest rather than a repost, because an RSS feed returns its entire current window on every read, not only what changed since last time. The remaining items are formatted individually, then Aggregate merges them into a single payload so one message is posted rather than one per item. That aggregate step is the difference between a useful digest and twenty separate notifications.\n\n## How to set up\n\n1. Put your feed URL in the **Read RSS feed** node.\n2. Create a Slack credential and pick the destination channel in the last node.\n3. Adjust the schedule trigger to the time you want it to arrive.\n4. Run it once by hand to check the formatting before enabling it.\n\n## Requirements\n\nA Slack workspace where you can create an app, and any public RSS feed. Both are free.\n\n## How to customize\n\nAdd more RSS nodes and merge them to cover several feeds in one digest. Change the filter window to run weekly instead of daily. Swap the Slack node for Telegram, Discord, or email - the rest of the workflow is unchanged.",
-        "height": 845,
-        "width": 660,
-        "color": 1
+        "content": "## Send a daily digest of RSS items to a Slack channel\n\n### How it works\n\n1. Runs once each morning on a schedule trigger and reads the feed.\n2. Keeps only items published in the last 24 hours, because an RSS feed returns its whole current window on every read rather than just what changed.\n3. Formats each remaining item into a single line.\n4. Merges those lines into one payload with Aggregate, so one message is posted instead of one per item.\n5. Posts the finished digest to your Slack channel.\n\n### Setup steps\n\n- [ ] Put your feed URL in the RSS node.\n- [ ] Create a Slack credential and pick the destination channel in the last node.\n- [ ] Adjust the schedule trigger to the time you want the digest to arrive.\n- [ ] Run it once by hand to check the formatting before enabling it.\n\n### Customization\n\nAdd more RSS nodes and merge them to cover several feeds in one digest. Change the filter window to run weekly instead of daily. Swap the Slack node for Telegram, Discord, or email without touching the rest of the workflow.",
+        "height": 800,
+        "width": 480
       }
     },
     {
-      "id": "s0",
-      "name": "Sticky Note s0",
+      "id": "g0",
+      "name": "Sticky Note g0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -80,
-        -40
+        -96,
+        160
       ],
       "parameters": {
-        "content": "### 1. Fetch on a schedule\nThe schedule trigger runs once a day and the RSS node pulls the current feed contents.",
-        "height": 220,
-        "width": 740,
+        "content": "## Fetch the feed on schedule\n\nThe schedule trigger runs once a day and the RSS node pulls the current feed contents.",
+        "height": 288,
+        "width": 672,
         "color": 7
       }
     },
     {
-      "id": "s1",
-      "name": "Sticky Note s1",
+      "id": "g1",
+      "name": "Sticky Note g1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        880,
-        -40
+        864,
+        96
       ],
       "parameters": {
-        "content": "### 2. Filter to what is actually new\nAn RSS feed returns its whole current window every time, not just what changed. Without this filter you would repost the same items every morning.",
-        "height": 220,
-        "width": 280,
+        "content": "## Keep only what is new\n\nWithout this filter the same items would be reposted every morning, because the feed returns its full window each time.",
+        "height": 368,
+        "width": 240,
         "color": 7
       }
     },
     {
-      "id": "s2",
-      "name": "Sticky Note s2",
+      "id": "g2",
+      "name": "Sticky Note g2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1360,
-        -40
+        1344,
+        192
       ],
       "parameters": {
-        "content": "### 3. One message, not twenty\nEach item is formatted, then **Aggregate** merges them into a single payload. Skipping the aggregate is what turns a digest into twenty separate notifications.",
-        "height": 220,
-        "width": 740,
+        "content": "## Format and merge items\n\nAggregate is what turns twenty separate notifications into one digest.",
+        "height": 272,
+        "width": 672,
         "color": 7
       }
     },
     {
-      "id": "s3",
-      "name": "Sticky Note s3",
+      "id": "g3",
+      "name": "Sticky Note g3",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2320,
-        -40
+        2304,
+        160
       ],
       "parameters": {
-        "content": "### 4. Post once\nA single message lands in the channel.",
-        "height": 220,
-        "width": 280,
+        "content": "## Post to Slack\n\nA single message lands in the channel.",
+        "height": 288,
+        "width": 240,
         "color": 7
       }
     },
@@ -93,7 +92,7 @@
         }
       },
       "id": "9d011450-0290-4898-9396-79e37358bb52",
-      "name": "Run every morning",
+      "name": "Every Morning at 8am",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
@@ -107,7 +106,7 @@
         "options": {}
       },
       "id": "b0beb580-aa05-449d-a380-6451965fa0a4",
-      "name": "Read RSS feed",
+      "name": "Fetch RSS Feed",
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1.1,
       "position": [
@@ -138,7 +137,7 @@
         "options": {}
       },
       "id": "96d7aa76-18c9-4087-9e2f-c4c8466411e7",
-      "name": "Keep items from last 24 hours",
+      "name": "Filter Items From Last 24h",
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2,
       "position": [
@@ -161,7 +160,7 @@
         "options": {}
       },
       "id": "3940e285-41fd-4e30-bd68-529a28cf05a8",
-      "name": "Format each item",
+      "name": "Build Digest Lines",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -175,7 +174,7 @@
         "options": {}
       },
       "id": "a6eb3b43-fd4a-46c9-ace4-63dd79b3b290",
-      "name": "Combine into one message",
+      "name": "Merge Into One Message",
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
@@ -197,7 +196,7 @@
         "otherOptions": {}
       },
       "id": "dc258ebf-0ac3-427a-8802-dab06c767746",
-      "name": "Post digest to Slack",
+      "name": "Post Digest to Slack",
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.2,
       "position": [
@@ -206,62 +205,61 @@
       ],
       "credentials": {
         "slackApi": {
-          "id": "REPLACE",
           "name": "Slack account"
         }
       }
     }
   ],
   "connections": {
-    "Run every morning": {
+    "Every Morning at 8am": {
       "main": [
         [
           {
-            "node": "Read RSS feed",
+            "node": "Fetch RSS Feed",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Read RSS feed": {
+    "Fetch RSS Feed": {
       "main": [
         [
           {
-            "node": "Keep items from last 24 hours",
+            "node": "Filter Items From Last 24h",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Keep items from last 24 hours": {
+    "Filter Items From Last 24h": {
       "main": [
         [
           {
-            "node": "Format each item",
+            "node": "Build Digest Lines",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Format each item": {
+    "Build Digest Lines": {
       "main": [
         [
           {
-            "node": "Combine into one message",
+            "node": "Merge Into One Message",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Combine into one message": {
+    "Merge Into One Message": {
       "main": [
         [
           {
-            "node": "Post digest to Slack",
+            "node": "Post Digest to Slack",
             "type": "main",
             "index": 0
           }

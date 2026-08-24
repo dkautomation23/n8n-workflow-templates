@@ -2,66 +2,49 @@
   "name": "Append leads from a webhook to a Google Sheets row",
   "nodes": [
     {
-      "id": "doc",
-      "name": "Sticky Note doc",
+      "id": "main",
+      "name": "Sticky Note main",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -780,
-        -40
+        -656,
+        128
       ],
       "parameters": {
-        "content": "## Append leads from a webhook to a Google Sheets row\n\n## Who's it for\n\nAnyone who wants incoming leads in a spreadsheet immediately, without paying for a form product that does it for them.\n\n## How it works\n\nA webhook receives the submission. A Set node maps the incoming payload to the columns you want, which keeps all the field mapping in one place - when the payload changes shape later, that Set node is the only thing you edit. The Google Sheets node then appends a row. Append is used rather than update, so existing rows are never overwritten and the sheet stays a clean append-only log.\n\n## How to set up\n\n1. Create a Google Sheets credential in n8n.\n2. Create a sheet and add a header row matching the fields you want to capture.\n3. Select that document and sheet in the **Append row to sheet** node.\n4. Adjust the Set node to the field names your source actually sends.\n5. Copy the webhook production URL into your form or ad platform.\n\n## Requirements\n\nA Google account and a Google Sheets credential in n8n. Both are free.\n\n## How to customize\n\nAdd a Remove Duplicates node after the Set node to keep repeat submissions out of the sheet. Add an IF node before the append to route bad or test submissions somewhere else, or a Slack node after it to be notified on every new lead.",
-        "height": 799,
-        "width": 660,
-        "color": 1
+        "content": "## Append leads from a webhook to a Google Sheets row\n\n### How it works\n\n1. Receives the lead on a webhook from a form, ad platform, or landing page.\n2. Maps the incoming payload to the columns you want in a single Set node.\n3. Appends the result as a new row in Google Sheets, leaving existing rows untouched.\n\n### Setup steps\n\n- [ ] Create a Google Sheets credential in n8n.\n- [ ] Create a sheet with a header row matching the fields you want to capture.\n- [ ] Select that document and sheet in the Google Sheets node.\n- [ ] Adjust the Set node to the field names your source actually sends.\n- [ ] Copy the webhook production URL into your form or ad platform.\n\n### Customization\n\nAdd a Remove Duplicates node after the Set node to keep repeat submissions out of the sheet. Add an IF node before the append to route test submissions elsewhere, or a Slack node after it for a notification on every lead.",
+        "height": 784,
+        "width": 480
       }
     },
     {
-      "id": "s0",
-      "name": "Sticky Note s0",
+      "id": "g0",
+      "name": "Sticky Note g0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -80,
-        -40
+        -96,
+        160
       ],
       "parameters": {
-        "content": "### 1. Receive the lead\nPoint your form, ad platform, or landing page at the production URL of this node.",
-        "height": 220,
-        "width": 280,
+        "content": "## Receive and map the lead\n\nAll field mapping lives in one Set node, so a payload that changes shape later is a one node edit.",
+        "height": 288,
+        "width": 672,
         "color": 7
       }
     },
     {
-      "id": "s1",
-      "name": "Sticky Note s1",
+      "id": "g1",
+      "name": "Sticky Note g1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        400,
-        -40
+        864,
+        128
       ],
       "parameters": {
-        "content": "### 2. Map fields in one place\nAll the fields you care about are set here, in one node. When the incoming payload changes shape, this is the only node you edit - the sheet node keeps working unchanged.",
-        "height": 220,
-        "width": 280,
-        "color": 7
-      }
-    },
-    {
-      "id": "s2",
-      "name": "Sticky Note s2",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        880,
-        -40
-      ],
-      "parameters": {
-        "content": "### 3. Append, never overwrite\nThe operation is **append**, so each lead becomes a new row and nothing already in the sheet is touched.",
-        "height": 220,
-        "width": 280,
+        "content": "## Append to the sheet\n\nThe operation is append rather than update, so the sheet stays a clean append-only log.",
+        "height": 336,
+        "width": 240,
         "color": 7
       }
     },
@@ -73,7 +56,7 @@
         "options": {}
       },
       "id": "7ac57c04-c4a1-432b-ac33-bf3dd99e2178",
-      "name": "Receive lead webhook",
+      "name": "When Lead Submitted",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
@@ -114,7 +97,7 @@
         "options": {}
       },
       "id": "7f96edb3-fe58-4028-a61a-786870a28ad6",
-      "name": "Map lead fields",
+      "name": "Build Lead Row",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
@@ -143,7 +126,7 @@
         "options": {}
       },
       "id": "3af030ca-c060-43ae-bd51-642f0befde1e",
-      "name": "Append row to sheet",
+      "name": "Append to Sheets",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
       "position": [
@@ -152,29 +135,28 @@
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "REPLACE",
           "name": "Google Sheets account"
         }
       }
     }
   ],
   "connections": {
-    "Receive lead webhook": {
+    "When Lead Submitted": {
       "main": [
         [
           {
-            "node": "Map lead fields",
+            "node": "Build Lead Row",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Map lead fields": {
+    "Build Lead Row": {
       "main": [
         [
           {
-            "node": "Append row to sheet",
+            "node": "Append to Sheets",
             "type": "main",
             "index": 0
           }

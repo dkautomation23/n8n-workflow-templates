@@ -5,40 +5,40 @@
     "executionOrder": "v1"
   },
   "connections": {
-    "Receive order webhook": {
+    "When Order Webhook Received": {
       "main": [
         [
           {
-            "node": "Check required fields",
+            "node": "If Required Fields Present",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Check required fields": {
+    "If Required Fields Present": {
       "main": [
         [
           {
-            "node": "Run order sub-workflow",
+            "node": "Run Order Processing Sub-workflow",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Respond 400 invalid payload",
+            "node": "Respond With 400 Invalid Payload",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Run order sub-workflow": {
+    "Run Order Processing Sub-workflow": {
       "main": [
         [
           {
-            "node": "Respond 200 accepted",
+            "node": "Respond With 200 Accepted",
             "type": "main",
             "index": 0
           }
@@ -48,88 +48,71 @@
   },
   "nodes": [
     {
-      "id": "doc",
-      "name": "Sticky Note doc",
+      "id": "main",
+      "name": "Sticky Note main",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -740,
-        -340
+        -608,
+        -128
       ],
       "parameters": {
-        "content": "## Validate and route authenticated order webhooks to a sub-workflow\n\n## Who's it for\n\nAnyone who accepts webhooks from a payment provider, shop platform, or partner API and needs the endpoint to be safe to expose publicly.\n\n## How it works\n\nThe webhook is protected with Header Auth, so a request without the shared secret is answered with 401 by n8n itself and never starts the workflow. Valid requests hit an IF node that checks the fields the rest of the flow depends on. Only complete payloads are handed to a separate processing sub-workflow, which keeps the webhook execution short so the provider does not time out. Each remaining branch ends in its own Respond to Webhook node, so the caller can tell a rejected payload (400) from a genuine success (200).\n\n## How to set up\n\n1. Create a **Header Auth** credential and set the header name and secret your provider will send.\n2. Attach it to the webhook node.\n3. Point the **Run order sub-workflow** node at your own processing workflow.\n4. Edit the IF conditions to match the fields your payload actually contains.\n5. Copy the production URL into your provider's webhook settings.\n\n## Requirements\n\nAn n8n instance reachable from the internet, and a Header Auth credential. No paid service is needed.\n\n## How to customize\n\nAdd conditions to the IF node for any field you must have. Swap the sub-workflow call for your own logic, or add a queue insert before it if you expect traffic spikes.",
-        "height": 868,
-        "width": 660,
-        "color": 1
+        "content": "## Validate and route authenticated order webhooks to a sub-workflow\n\n### How it works\n\n1. Receives the order on a webhook protected by Header Auth, so a request without the shared secret is answered with 401 by n8n itself and never starts the workflow.\n2. Checks with an IF node that the fields the rest of the flow depends on are actually present in the payload.\n3. Passes complete payloads to a separate processing sub-workflow, which keeps the webhook execution short so the provider does not time out.\n4. Answers a valid request with 200 and a rejected payload with 400, so the caller can tell the two apart.\n\n### Setup steps\n\n- [ ] Create a Header Auth credential with the header name and secret your provider sends, and attach it to the webhook node.\n- [ ] Point the sub-workflow node at your own order processing workflow.\n- [ ] Edit the IF conditions to match the fields your payload actually contains.\n- [ ] Copy the production webhook URL into your provider's webhook settings.\n\n### Customization\n\nAdd a condition to the IF node for every field you must have. If you expect traffic spikes, insert a queue write before the sub-workflow call so the webhook returns immediately and the work drains separately.",
+        "height": 880,
+        "width": 480
       }
     },
     {
-      "id": "s0",
-      "name": "Sticky Note s0",
+      "id": "g0",
+      "name": "Sticky Note g0",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -40,
-        -340
+        -48,
+        -32
       ],
       "parameters": {
-        "content": "### 1. Authenticated entry point\nThe webhook uses **Header Auth**, so an unauthenticated call never reaches your logic. Point your provider at the production URL and send the shared secret in the agreed header.",
-        "height": 220,
-        "width": 280,
+        "content": "## Receive authenticated webhook\n\nHeader Auth guards the endpoint, so unauthenticated calls are rejected by n8n before any node runs.",
+        "height": 384,
+        "width": 240,
         "color": 7
       }
     },
     {
-      "id": "s1",
-      "name": "Sticky Note s1",
+      "id": "g1",
+      "name": "Sticky Note g1",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        856,
-        -340
+        848,
+        -128
       ],
       "parameters": {
-        "content": "### 2. Validate before you act\nAn IF node checks that the fields you depend on are actually present. A payload that changed shape upstream is rejected here instead of failing halfway through the sub-workflow.",
-        "height": 220,
-        "width": 280,
+        "content": "## Validate required fields\n\nRejects a payload that changed shape upstream here, instead of failing halfway through the sub-workflow.",
+        "height": 384,
+        "width": 240,
         "color": 7
       }
     },
     {
-      "id": "s2",
-      "name": "Sticky Note s2",
+      "id": "g2",
+      "name": "Sticky Note g2",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1304,
-        -340
+        1296,
+        -128
       ],
       "parameters": {
-        "content": "### 3. Hand off the real work\nThe heavy processing lives in a separate workflow, so the webhook execution stays short and the provider does not time out waiting for it.",
-        "height": 220,
-        "width": 280,
-        "color": 7
-      }
-    },
-    {
-      "id": "s3",
-      "name": "Sticky Note s3",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1608,
-        -340
-      ],
-      "parameters": {
-        "content": "### 4. Answer with the right status\nBoth paths end in an explicit response, so the caller can tell a rejected payload (400) from a genuine success (200). A wrong or missing secret never gets this far - Header Auth answers 401 itself, before the workflow starts, which is why there is no 401 node here.",
-        "height": 220,
-        "width": 708,
+        "content": "## Process order and respond\n\nThe heavy work runs in a separate workflow. Both paths end in an explicit response so the caller knows what happened.",
+        "height": 480,
+        "width": 640,
         "color": 7
       }
     },
     {
       "id": "be88a87c-4709-4fa0-b967-a2557887bffb",
-      "name": "Receive order webhook",
+      "name": "When Order Webhook Received",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
@@ -151,7 +134,7 @@
     },
     {
       "id": "40e01d6c-06e1-4ba2-96b8-fc8e91a5e9ab",
-      "name": "Check required fields",
+      "name": "If Required Fields Present",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
@@ -199,7 +182,7 @@
     },
     {
       "id": "3bf5bd63-efa0-44de-b2d5-9fe3d7021d66",
-      "name": "Run order sub-workflow",
+      "name": "Run Order Processing Sub-workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
@@ -218,9 +201,9 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "order_id": "={{ $('Receive order webhook').item.json.body.order_id }}",
-            "customer_id": "={{ $('Receive order webhook').item.json.body.customer_id }}",
-            "total": "={{ $('Receive order webhook').item.json.body.total }}"
+            "order_id": "={{ $('When Order Webhook Received').item.json.body.order_id }}",
+            "customer_id": "={{ $('When Order Webhook Received').item.json.body.customer_id }}",
+            "total": "={{ $('When Order Webhook Received').item.json.body.total }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -262,7 +245,7 @@
     },
     {
       "id": "fe03972e-d201-4d95-806d-96c306326c2c",
-      "name": "Respond 200 accepted",
+      "name": "Respond With 200 Accepted",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
@@ -271,7 +254,7 @@
       ],
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n\"status\": \"accepted\",\n\"order_id\": \"{{ $('Run order sub-workflow').item.json.order_id }}\",\n\"message\": \"Order processed successfully\",\n\"stored\": {{ $('Run order sub-workflow').item.json.stored }},\n\"stored_order\": {{ $('Run order sub-workflow').item.json.stored_order }},\n\"processed\": true,\n\"processing_result\": \"{{ $('Run order sub-workflow').item.json.processing_result }}\"\n}",
+        "responseBody": "={\n\"status\": \"accepted\",\n\"order_id\": \"{{ $('Run Order Processing Sub-workflow').item.json.order_id }}\",\n\"message\": \"Order processed successfully\",\n\"stored\": {{ $('Run Order Processing Sub-workflow').item.json.stored }},\n\"stored_order\": {{ $('Run Order Processing Sub-workflow').item.json.stored_order }},\n\"processed\": true,\n\"processing_result\": \"{{ $('Run Order Processing Sub-workflow').item.json.processing_result }}\"\n}",
         "options": {
           "responseCode": 200
         }
@@ -279,7 +262,7 @@
     },
     {
       "id": "8198cdae-4daf-4855-8c7d-30dbfa03ac33",
-      "name": "Respond 400 invalid payload",
+      "name": "Respond With 400 Invalid Payload",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
