@@ -96,7 +96,10 @@ def problems_in(path: Path) -> list[str]:
         if match:
             found.append(f"{label} in the export: {match.group(0)[:24]}...")
     for match in EMAIL.finditer(raw):
-        if not match.group(1).lower().endswith(SAFE_EMAIL_DOMAINS):
+        domain = match.group(1).lower()
+        # `notexample.com` must not pass as `example.com`, so match the domain
+        # itself or a subdomain of it, never a suffix.
+        if not any(domain == safe or domain.endswith("." + safe) for safe in SAFE_EMAIL_DOMAINS):
             found.append(f"real-looking email address: {match.group(0)}")
 
     return found
