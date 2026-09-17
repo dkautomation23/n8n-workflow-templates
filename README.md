@@ -1,5 +1,7 @@
 # n8n-workflow-templates
 
+[![CI](https://github.com/dkautomation23/n8n-workflow-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/dkautomation23/n8n-workflow-templates/actions/workflows/ci.yml)
+
 A small, practical set of **ready-to-import [n8n](https://n8n.io) workflows** for
 the jobs that come up again and again: capturing leads, digesting feeds, pushing
 form submissions into a CRM without duplicates, and receiving authenticated
