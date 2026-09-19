@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a problem with a template or the validator in n8n-workflow-templates.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste tokens, API keys, webhook URLs, or other credentials into this form. Redact them first.**
+  - type: input
+    id: n8n-version
+    attributes:
+      label: n8n version
+      placeholder: "1.6x"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11, macOS 14, Ubuntu 22.04, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Which template, and exact steps to reproduce
+      description: e.g. import steps, or `python tests/validate_templates.py` if it's a validator issue.
+      placeholder: |
+        Template: templates/lead-webhook-to-google-sheets.json
+        1.
+        2.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected to happen
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What actually happened
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output or traceback
+      render: shell
+    validations:
+      required: false
